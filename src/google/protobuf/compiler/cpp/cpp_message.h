@@ -115,7 +115,10 @@ class MessageGenerator {
 
   // Generate the field offsets array.  Returns the a pair of the total numer
   // of entries generated and the index of the first has_bit entry.
+  void FillGenClassName(io::Printer* printer);
+
   std::pair<size_t, size_t> GenerateOffsets(io::Printer* printer);
+  std::pair<size_t, size_t> GenerateOffsetsV2(io::Printer* printer);
   void GenerateSchema(io::Printer* printer, int offset, int has_offset);
   // For each field generates a table entry describing the field for the
   // table driven serializer.

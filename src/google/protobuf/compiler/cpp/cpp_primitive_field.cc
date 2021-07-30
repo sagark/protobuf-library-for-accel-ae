@@ -341,6 +341,7 @@ void RepeatedPrimitiveFieldGenerator::GenerateInlineAccessorDefinitions(
       "  // @@protoc_insertion_point(field_set:$full_name$)\n"
       "}\n"
       "inline void $classname$::_internal_add_$name$($type$ value) {\n"
+      "  $set_hasbit$\n"
       "  $name$_.Add(value);\n"
       "}\n"
       "inline void $classname$::add_$name$($type$ value) {\n"

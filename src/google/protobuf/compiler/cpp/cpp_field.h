@@ -185,8 +185,9 @@ class FieldGenerator {
 
   void SetHasBitIndex(int32 has_bit_index);
 
- protected:
+ public:
   const FieldDescriptor* descriptor_;
+ protected:
   const Options& options_;
   std::map<std::string, std::string> variables_;
 

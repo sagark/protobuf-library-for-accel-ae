@@ -280,6 +280,7 @@ void RepeatedEnumFieldGenerator::GenerateInlineAccessorDefinitions(
     format("  assert($type$_IsValid(value));\n");
   }
   format(
+      "  $set_hasbit$\n"
       "  $name$_.Add(value);\n"
       "}\n"
       "inline void $classname$::add_$name$($type$ value) {\n"

@@ -197,6 +197,10 @@ void FileGenerator::GenerateHeader(io::Printer* printer) {
       "PROTOBUF_NAMESPACE_CLOSE\n");
 
   GenerateGlobalStateFunctionDeclarations(printer);
+for (int i = 0; i < message_generators_.size(); i++) {
+   message_generators_[i]->FillGenClassName(printer);
+}
+
 
   GenerateForwardDeclarations(printer);
 
@@ -766,6 +770,10 @@ void FileGenerator::GenerateReflectionInitializationCode(io::Printer* printer) {
         "constexpr ::$proto_ns$::ServiceDescriptor const** "
         "$file_level_service_descriptors$ = nullptr;\n");
   }
+
+    for (int i = 0; i < message_generators_.size(); i++) {
+       message_generators_[i]->GenerateOffsetsV2(printer);
+    }
 
   if (!message_generators_.empty()) {
     format(

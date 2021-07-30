@@ -626,15 +626,24 @@ MessageGenerator::MessageGenerator(
   message_layout_helper_->OptimizeLayout(&optimized_order_, options_);
 
   if (HasFieldPresence(descriptor_->file())) {
+    long long maxfieldnum = 1 - 1; // start at min possible field num - 1
+    long long minfieldnum = 536870911 + 1; // start at max possible field num + 1
+    for (auto field : optimized_order_) {
+        if (field->number() < minfieldnum) {
+            minfieldnum = field->number();
+        }
+        if (field->number() > maxfieldnum) {
+            maxfieldnum = field->number();
+        }
+    }
+
+    long long numfields = (maxfieldnum - minfieldnum) + 1;
+
+    max_has_bit_index_ = numfields;
     // We use -1 as a sentinel.
     has_bit_indices_.resize(descriptor_->field_count(), -1);
     for (auto field : optimized_order_) {
-      // Skip fields that do not have has bits.
-      if (field->is_repeated()) {
-        continue;
-      }
-
-      has_bit_indices_[field->index()] = max_has_bit_index_++;
+      has_bit_indices_[field->index()] = (field->number() - minfieldnum) + 1;
     }
     field_generators_.SetHasBitIndices(has_bit_indices_);
   }
@@ -1620,6 +1629,15 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* printer) {
   // construct the offsets of all members.
   format("friend struct ::$tablename$;\n");
 
+  std::string prefixstr;
+  if (descriptor_->file()->package().empty()) {
+    prefixstr = "";
+  } else {
+    prefixstr = StringReplace(descriptor_->file()->package(), ".", "__", true);
+  }
+
+  format("friend struct ::$1$_FriendStruct_$classname$_ACCEL_DESCRIPTORS;\n", prefixstr);
+
   format.Outdent();
   format("};");
   GOOGLE_DCHECK(!need_to_emit_cached_size);
@@ -2369,6 +2387,158 @@ size_t MessageGenerator::GenerateParseAuxTable(io::Printer* printer) {
   }
 
   return last_field_number;
+}
+
+void MessageGenerator::FillGenClassName(
+    io::Printer* printer) {
+  Formatter format(printer, variables_);
+
+  std::string prefixstr;
+  if (descriptor_->file()->package().empty()) {
+    prefixstr = "";
+  } else {
+    prefixstr = StringReplace(descriptor_->file()->package(), ".", "__", true);
+  }
+
+  format("\n"
+         " struct $1$_FriendStruct_$classname$_ACCEL_DESCRIPTORS {\n"
+         "static const $uint64$ $classname$_ACCEL_DESCRIPTORS[];\n"
+         "};\n", prefixstr);
+
+}
+
+std::pair<size_t, size_t> MessageGenerator::GenerateOffsetsV2(
+    io::Printer* printer) {
+  Formatter format(printer, variables_);
+
+  std::string prefixstr;
+  if (descriptor_->file()->package().empty()) {
+    prefixstr = "";
+  } else {
+    prefixstr = StringReplace(descriptor_->file()->package(), ".", "__", true);
+  }
+
+  format("\n" "alignas(16) const $uint64$  $1$_FriendStruct_$classname$_ACCEL_DESCRIPTORS::$classname$_ACCEL_DESCRIPTORS[] = {\n", prefixstr);
+  format.Indent();
+
+  format ("/* HEADER: */\n");
+  format ("/* entry 0: this obj vptr */\n (uint64_t)(*((uint64_t*)(&($classtype$::default_instance())))),\n");
+  format ("/* entry 1: this obj size */\n (uint64_t)sizeof($classtype$),\n");
+  format ("/* entry 2: hasbits raw offset */\n (uint64_t) PROTOBUF_FIELD_OFFSET($classtype$, _has_bits_),\n");
+
+  const int kNumGenericOffsets = 5;  // the number of fixed offsets above
+  const size_t offsets = kNumGenericOffsets + descriptor_->field_count() +
+                         descriptor_->oneof_decl_count();
+
+  long long maxfieldnum = 1 - 1; // start at min possible field num - 1
+  long long minfieldnum = 536870911 + 1; // start at max possible field num + 1
+  for (auto field : FieldRange(descriptor_)) {
+    if (field->number() > maxfieldnum) {
+      maxfieldnum = field->number();
+    }
+    if (field->number() < minfieldnum) {
+      minfieldnum = field->number();
+    }
+  }
+
+  std::vector<const FieldDescriptor*> fields(maxfieldnum+1, NULL);
+  for (auto field : FieldRange(descriptor_)) {
+    fields[field->number()] = field;
+  }
+
+  format ("/* entry 3: */\n");
+  format ("/* min field num */ (((uint64_t) $1$L) << 32) |\n", minfieldnum);
+  format ("/* max field num */ (((uint64_t) $1$L) & 0x00000000FFFFFFFFL),\n", maxfieldnum);
+
+  format ("\n/* ENTRIES (128 bits each): */\n");
+  format ("/* { is_repeated (1bit) | cpp_type (5bits) | offset (58bits) } */\n");
+  format ("/* { submessage ADT pointer (64 bits) } */\n");
+
+
+  size_t entries = offsets;
+  for (int i = minfieldnum; i <= maxfieldnum; i++) {
+
+    format("\n/* field $1$ entry */\n", i);
+
+    const FieldDescriptor* field = fields[i];
+    if (field == NULL) {
+        format("/* no field here entry1 */ 0L,\n");
+        format("/* no field here entry2 */ 0L,\n");
+        continue;
+    }
+
+    format("/* is_repeated */\n(((uint64_t)$1$) << 63) |\n", std::to_string(field->is_repeated()));
+
+    format("/*        type */\n((((uint64_t)$1$) & 0x1F) << 58) |\n", std::to_string(field->type()));
+    format("/*      offset */\n(((((uint64_t)(");
+    if (field->containing_oneof() || field->options().weak()) {
+      format(" offsetof($classtype$DefaultTypeInternal, $1$_) ",
+             FieldName(field));
+    } else {
+      format(" PROTOBUF_FIELD_OFFSET($classtype$, $1$_) ", FieldName(field));
+    }
+
+    if (field->is_repeated()) {
+        format("))+8) << 6) >> 6)");
+    } else {
+        format("))) << 6) >> 6)");
+    }
+
+    format(",\n");
+
+    const FieldGenerator& nfield_generator = field_generators_.get(field);
+    const FieldDescriptor* nfield_fdescript = nfield_generator.descriptor_;
+
+    std::string nmessprefixstr;
+    if (nfield_fdescript->file()->package().empty()) {
+      nmessprefixstr = "";
+    } else {
+      nmessprefixstr = StringReplace(nfield_fdescript->file()->package(), ".", "__", true);
+    }
+
+    format ("/* if nested message, pointer to that type's descriptor table */\n");
+    if (nfield_fdescript->message_type() != NULL) {
+        // nested message descriptor table pointer
+        std::string clname = ClassName(nfield_fdescript->message_type(), false);
+        format("(uint64_t)($1$_FriendStruct_$2$_ACCEL_DESCRIPTORS::$2$_ACCEL_DESCRIPTORS),\n", prefixstr, clname);
+    } else {
+        // non nested.
+        format("0L,\n");
+    }
+  }
+
+  format ("\n/* is_submessage region (64 bits each): */\n");
+  long long write_so_far = 0;
+  for (int i = minfieldnum; i <= maxfieldnum; i++) {
+    int write_index = (i - minfieldnum) + 1;
+
+
+    int intra_chunk_index = write_index % 64;
+    int chunk_id = write_index / 64;
+
+    const FieldDescriptor* field = fields[i];
+    if (field != NULL) {
+        // for this field, emit extra metadata if it's a nested message
+        const FieldGenerator& nfield_generator = field_generators_.get(field);
+        const FieldDescriptor* nfield_fdescript = nfield_generator.descriptor_;
+
+        if (nfield_fdescript->message_type() != NULL) {
+            write_so_far |= (1L << intra_chunk_index);
+        }
+    }
+
+    if ((intra_chunk_index == 63) || (i == maxfieldnum)) {
+        format("$1$L,\n", write_so_far);
+        write_so_far = 0L;
+    }
+  }
+
+  format.Outdent();
+  format(
+      "};\n"
+  );
+
+  return std::make_pair(entries, offsets);
 }
 
 std::pair<size_t, size_t> MessageGenerator::GenerateOffsets(

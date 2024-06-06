@@ -187,8 +187,9 @@ class FieldGeneratorBase {
     return ArenaDtorNeeds::kNone;
   }
 
- protected:
+ public:
   const FieldDescriptor* descriptor_;
+ protected:
   const Options& options_;
   MessageSCCAnalyzer* scc_;
   absl::flat_hash_map<absl::string_view, std::string> variables_;
@@ -479,6 +480,8 @@ class FieldGenerator {
     return impl_->NeedsArenaDestructor();
   }
 
+  std::unique_ptr<FieldGeneratorBase> impl_;
+
  private:
   friend class FieldGeneratorTable;
   FieldGenerator(const FieldDescriptor* field, const Options& options,
@@ -486,7 +489,6 @@ class FieldGenerator {
                  absl::optional<uint32_t> hasbit_index,
                  absl::optional<uint32_t> inlined_string_index);
 
-  std::unique_ptr<FieldGeneratorBase> impl_;
   std::vector<io::Printer::Sub> field_vars_;
   std::vector<io::Printer::Sub> tracker_vars_;
   std::vector<io::Printer::Sub> per_generator_vars_;

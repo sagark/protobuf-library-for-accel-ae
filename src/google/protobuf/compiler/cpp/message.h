@@ -81,6 +81,9 @@ class MessageGenerator {
   // of entries generated and the index of the first has_bit entry.
   std::pair<size_t, size_t> GenerateOffsets(io::Printer* p);
 
+  void FillGenClassName(io::Printer* printer);
+  std::pair<size_t, size_t> GenerateOffsetsV2(io::Printer* printer);
+
   const Descriptor* descriptor() const { return descriptor_; }
 
  private:

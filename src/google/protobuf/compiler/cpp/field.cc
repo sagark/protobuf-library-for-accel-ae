@@ -15,8 +15,10 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -275,6 +277,7 @@ void HasBitVars(const FieldDescriptor* field, const Options& opts,
     return;
   }
 
+  std::cout << "field type: " << field->type_name() << std::endl;
   ABSL_CHECK(internal::cpp::HasHasbit(field));
 
   int32_t index = *idx / 32;

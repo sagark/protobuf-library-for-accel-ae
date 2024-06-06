@@ -488,6 +488,7 @@ void RepeatedPrimitive::GenerateInlineAccessorDefinitions(
     inline void $Msg$::add_$name$($Type$ value) {
       $WeakDescriptorSelfPin$;
       $TsanDetectConcurrentMutation$;
+      $set_hasbit$;
       _internal_mutable_$name_internal$()->Add(value);
       $annotate_add$;
       // @@protoc_insertion_point(field_add:$pkg.Msg.field$)

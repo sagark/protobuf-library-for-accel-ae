@@ -420,6 +420,7 @@ void RepeatedEnum::GenerateInlineAccessorDefinitions(io::Printer* p) const {
     inline void $Msg$::add_$name$($Enum$ value) {
       $WeakDescriptorSelfPin$;
       $assert_valid$;
+      $set_hasbit$;
       $TsanDetectConcurrentMutation$;
       _internal_mutable_$name_internal$()->Add(value);
       $annotate_add$

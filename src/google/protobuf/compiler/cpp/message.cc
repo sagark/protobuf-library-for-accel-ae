@@ -2130,6 +2130,8 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
 
 void MessageGenerator::FillGenClassName(
     io::Printer* printer) {
+  auto v = printer->WithVars(ClassVars(descriptor_, options_));
+
   Formatter format(printer, variables_);
 
   std::string prefixstr;
@@ -2143,11 +2145,12 @@ void MessageGenerator::FillGenClassName(
          " struct $1$_FriendStruct_$classname$_ACCEL_DESCRIPTORS {\n"
          "static const $uint64$ $classname$_ACCEL_DESCRIPTORS[];\n"
          "};\n", prefixstr);
-
 }
 
 std::pair<size_t, size_t> MessageGenerator::GenerateOffsetsV2(
     io::Printer* printer) {
+  auto v = printer->WithVars(ClassVars(descriptor_, options_));
+
   Formatter format(printer, variables_);
 
   std::string prefixstr;

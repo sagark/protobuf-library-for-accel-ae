@@ -62,7 +62,9 @@ class MapEntryBase : public Message {
     return &data;
   }
 
+ public:
   HasBits<1> _has_bits_{};
+ protected:
   mutable CachedSize _cached_size_{};
 };
 
@@ -191,6 +193,7 @@ class MapEntry : public MapEntryBase {
             WireFormatLite::FieldType>
   friend class MapField;
 
+ public:
   KeyOnMemory key_;
   ValueOnMemory value_;
 };

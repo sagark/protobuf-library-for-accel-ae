@@ -216,6 +216,7 @@ absl::flat_hash_map<absl::string_view, std::string> MessageVars(
       {"weak_field_map", absl::StrCat(prefix, "_weak_field_map_")},
       {"split", absl::StrCat(prefix, "_split_")},
       {"cached_split_ptr", "cached_split_ptr"},
+      {"impl_prefix", std::string(prefix)},
   };
 }
 

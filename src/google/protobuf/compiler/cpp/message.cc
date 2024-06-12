@@ -2136,12 +2136,7 @@ void MessageGenerator::FillGenClassName(
 
   Formatter format(printer, variables_);
 
-  std::string prefixstr;
-  if (descriptor_->file()->package().empty()) {
-    prefixstr = "";
-  } else {
-    prefixstr = absl::StrReplaceAll(descriptor_->file()->package(), {{".", "__"}});
-  }
+  std::string prefixstr = descriptor_->file()->package().empty() ? "" : absl::StrReplaceAll(descriptor_->file()->package(), {{".", "__"}});
 
   printer->Emit({{"prefix_str", prefixstr}}, R"cc(
     struct $prefix_str$_FriendStruct_$classname$_ACCEL_DESCRIPTORS {
@@ -2157,15 +2152,15 @@ std::pair<size_t, size_t> MessageGenerator::GenerateOffsetsV2(
 
   Formatter format(printer, variables_);
 
-  std::string prefixstr;
-  if (descriptor_->file()->package().empty()) {
-    prefixstr = "";
-  } else {
-    prefixstr = absl::StrReplaceAll(descriptor_->file()->package(), {{".", "__"}});
-  }
+  std::string prefixstr = descriptor_->file()->package().empty() ? "" : absl::StrReplaceAll(descriptor_->file()->package(), {{".", "__"}});
 
-  printer->Emit({{"prefix_str", prefixstr}, {"is_m_e_addr", IsMapEntryMessage(descriptor_) ? "" : "&"}, {"is_map_entry", IsMapEntryMessage(descriptor_) ? "internal_" : ""}}, R"cc(
-    alignas(16) const $uint64$  $prefix_str$_FriendStruct_$classname$_ACCEL_DESCRIPTORS::$classname$_ACCEL_DESCRIPTORS[] = {
+  printer->Emit(
+    {
+      {"prefix_str", prefixstr},
+      {"is_m_e_addr", IsMapEntryMessage(descriptor_) ? "" : "&"},
+      {"is_map_entry", IsMapEntryMessage(descriptor_) ? "internal_" : ""}
+    }, R"cc(
+    alignas(16) const $uint64$ $prefix_str$_FriendStruct_$classname$_ACCEL_DESCRIPTORS::$classname$_ACCEL_DESCRIPTORS[] = {
       /* HEADER: */
       /* entry 0: this obj vptr */
       (uint64_t)(*((uint64_t*)($is_m_e_addr$($classtype$::$is_map_entry$default_instance())))),
@@ -2231,19 +2226,22 @@ std::pair<size_t, size_t> MessageGenerator::GenerateOffsetsV2(
     )cc");
 
     // NOTE(abegonzalez): weak doesn't seem to be used in OSS
-    //if (field->containing_oneof() || field->options().weak()) {
-    if (field->containing_oneof()) {
-      printer->Emit({{"field_name", FieldName(field)}}, R"cc(
-        PROTOBUF_FIELD_OFFSET($classtype$, $impl_prefix$kind_.$field_name$_)
+    const OneofDescriptor* oneof = field->containing_oneof();
+    if (oneof || field->options().weak()) {
+      printer->Emit({
+        {"field_name", FieldName(field)},
+        {"oneof_name", oneof->name()},
+      }, R"cc(
+        /* was oneof or weak: $impl_prefix$ $oneof_name$ $field_name$ */
+        PROTOBUF_FIELD_OFFSET($classtype$, $impl_prefix$$oneof_name$_.$field_name$_)
       )cc");
-      // why not this?
-      // PROTOBUF_FIELD_OFFSET($classtype$DefaultTypeInternal, _instance._impl_.kind_.$field_name$_)
 
-      // old
+      // old code had static struct w/ field name in top-level... no longer the case
       // printer->Emit({{"field_name", FieldName(field)}}, R"cc(
-      //   offsetof($classtype$DefaultTypeInternal, _impl_.$field_name$_)
+      //   offsetof($classtype$DefaultTypeInternal, $field_name$_)
     } else {
       printer->Emit({{"field_name", FieldName(field)}}, R"cc(
+        /* was default field: $impl_prefix$ $field_name$ */
         PROTOBUF_FIELD_OFFSET($classtype$, $impl_prefix$$field_name$_)
       )cc");
     }

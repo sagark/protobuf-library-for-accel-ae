@@ -7,7 +7,7 @@ set(CMAKE_CXX_COMPILER riscv64-unknown-linux-gnu-g++)
 set(CMAKE_CUSTOM_LINKER riscv64-unknown-linux-gnu-ld)
 
 # where is the target environment located
-set(CMAKE_FIND_ROOT_PATH ${ENV{RISCV}})
+set(CMAKE_FIND_ROOT_PATH $ENV{RISCV})
 
 # adjust the default behavior of the FIND_XXX() commands:
 # search programs in the host environment

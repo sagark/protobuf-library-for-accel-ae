@@ -2104,6 +2104,11 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
           $decl_field_accessors$;
           $decl_extension_ids$;
           $proto2_message_sets$;
+
+          const void* GetAccelDescriptor() const override {
+            return ::$prefix_str$_FriendStruct_$classname$_ACCEL_DESCRIPTORS::$classname$_ACCEL_DESCRIPTORS;
+          }
+
           // @@protoc_insertion_point(class_scope:$full_name$)
           //~ Generate private members.
          private:

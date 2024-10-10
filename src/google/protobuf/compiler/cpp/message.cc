@@ -2295,7 +2295,7 @@ std::pair<size_t, size_t> MessageGenerator::GenerateOffsetsV2(
   printer->Emit(R"cc(
     /* is_submessage region (64 bits each): */
   )cc");
-  long long write_so_far = 0;
+  uint64_t write_so_far = 0;
   for (int i = minfieldnum; i <= maxfieldnum; i++) {
     int write_index = (i - minfieldnum) + 1;
 

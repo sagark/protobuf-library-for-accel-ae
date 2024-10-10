@@ -2105,9 +2105,9 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
           $decl_extension_ids$;
           $proto2_message_sets$;
 
-          const void* GetAccelDescriptor() const override {
-            return ::$prefix_str$_FriendStruct_$classname$_ACCEL_DESCRIPTORS::$classname$_ACCEL_DESCRIPTORS;
-          }
+          //const void* GetAccelDescriptor() const override {
+          //  return ::$prefix_str$_FriendStruct_$classname$_ACCEL_DESCRIPTORS::$classname$_ACCEL_DESCRIPTORS;
+          //}
 
           // @@protoc_insertion_point(class_scope:$full_name$)
           //~ Generate private members.
@@ -2130,204 +2130,205 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
           //~ order to construct the offsets of all members.
           friend struct ::$tablename$;
 
-          friend struct ::$prefix_str$_FriendStruct_$classname$_ACCEL_DESCRIPTORS;
+          //friend struct ::$prefix_str$_FriendStruct_$classname$_ACCEL_DESCRIPTORS;
         };
       )cc");
 }  // NOLINT(readability/fn_size)
 
 void MessageGenerator::FillGenClassName(
     io::Printer* printer) {
-  auto v = printer->WithVars(ClassVars(descriptor_, options_));
-
-  Formatter format(printer, variables_);
-
-  std::string prefixstr = descriptor_->file()->package().empty() ? "" : absl::StrReplaceAll(descriptor_->file()->package(), {{".", "__"}});
-
-  printer->Emit({{"prefix_str", prefixstr}}, R"cc(
-    struct $prefix_str$_FriendStruct_$classname$_ACCEL_DESCRIPTORS {
-      static const $uint64$ $classname$_ACCEL_DESCRIPTORS[];
-    };
-  )cc");
+  // auto v = printer->WithVars(ClassVars(descriptor_, options_));
+  //
+  // Formatter format(printer, variables_);
+  //
+  // std::string prefixstr = descriptor_->file()->package().empty() ? "" : absl::StrReplaceAll(descriptor_->file()->package(), {{".", "__"}});
+  //
+  // printer->Emit({{"prefix_str", prefixstr}}, R"cc(
+  //   struct $prefix_str$_FriendStruct_$classname$_ACCEL_DESCRIPTORS {
+  //     static const $uint64$ $classname$_ACCEL_DESCRIPTORS[];
+  //   };
+  // )cc");
 }
 
 std::pair<size_t, size_t> MessageGenerator::GenerateOffsetsV2(
     io::Printer* printer) {
-  auto v = printer->WithVars(ClassVars(descriptor_, options_));
-  auto t = printer->WithVars(MessageVars(descriptor_));
-
-  Formatter format(printer, variables_);
-
-  std::string prefixstr = descriptor_->file()->package().empty() ? "" : absl::StrReplaceAll(descriptor_->file()->package(), {{".", "__"}});
-
-  printer->Emit(
-    {
-      {"prefix_str", prefixstr},
-      {"is_m_e_addr", IsMapEntryMessage(descriptor_) ? "" : "&"},
-      {"is_map_entry", IsMapEntryMessage(descriptor_) ? "internal_" : ""}
-    }, R"cc(
-    alignas(16) const $uint64$ $prefix_str$_FriendStruct_$classname$_ACCEL_DESCRIPTORS::$classname$_ACCEL_DESCRIPTORS[] = {
-      /* HEADER: */
-      /* entry 0: this obj vptr */
-      (uint64_t)(*((uint64_t*)($is_m_e_addr$($classtype$::$is_map_entry$default_instance())))),
-      /* entry 1: this obj size */
-      (uint64_t)sizeof($classtype$),
-      /* entry 2: hasbits raw offset */
-      (uint64_t) PROTOBUF_FIELD_OFFSET($classtype$, $has_bits$), // using $$has_bits$$ instead of straight _impl_._has_bits_
-  )cc");
-
-  const int kNumGenericOffsets = 5;  // the number of fixed offsets above
-  const size_t offsets = kNumGenericOffsets + descriptor_->field_count() +
-                         descriptor_->oneof_decl_count();
-
-  long long maxfieldnum = 1 - 1; // start at min possible field num - 1
-  long long minfieldnum = 536870911 + 1; // start at max possible field num + 1
-  for (auto field : FieldRange(descriptor_)) {
-    if (field->number() > maxfieldnum) {
-      maxfieldnum = field->number();
-    }
-    if (field->number() < minfieldnum) {
-      minfieldnum = field->number();
-    }
-  }
-
-  std::vector<const FieldDescriptor*> fields(maxfieldnum+1, NULL);
-  for (auto field : FieldRange(descriptor_)) {
-    fields[field->number()] = field;
-  }
-
-  printer->Emit({{"min_field_num", minfieldnum}, {"max_field_num", maxfieldnum}}, R"cc(
-    /* entry 3: */
-    /* min field num */ (((uint64_t) $min_field_num$L) << 32) |
-    /* max field num */ (((uint64_t) $max_field_num$L) & 0x00000000FFFFFFFFL),
-
-    /* ENTRIES (128 bits each): */
-    /* { is_repeated (1bit) | cpp_type (5bits) | offset (58bits) } */
-    /* { submessage ADT pointer (64 bits) } */
-  )cc");
-
-  size_t entries = offsets;
-  for (int i = minfieldnum; i <= maxfieldnum; i++) {
-
-    printer->Emit({{"i", i}}, R"cc(
-      /* field $i$ entry */
-    )cc");
-
-    const FieldDescriptor* field = fields[i];
-    if (field == NULL) {
-      printer->Emit(R"cc(
-        /* no field here entry1 */ 0L,
-        /* no field here entry2 */ 0L,
-      )cc");
-      continue;
-    }
-
-    printer->Emit({{"is_repeated", std::to_string(field->is_repeated())}, {"type", std::to_string(field->type())}}, R"cc(
-      /* is_repeated */
-      (((uint64_t)$is_repeated$) << 63) |
-      /*        type */
-      ((((uint64_t)$type$) & 0x1F) << 58) |
-      /*      offset */
-      (((((uint64_t)(
-    )cc");
-
-    // NOTE(abegonzalez): weak doesn't seem to be used in OSS
-    const OneofDescriptor* oneof = field->containing_oneof();
-    if (oneof || field->options().weak()) {
-      printer->Emit({
-        {"field_name", FieldName(field)},
-        {"oneof_name", oneof->name()},
-      }, R"cc(
-        /* was oneof or weak: $impl_prefix$ $oneof_name$ $field_name$ */
-        PROTOBUF_FIELD_OFFSET($classtype$, $impl_prefix$$oneof_name$_.$field_name$_)
-      )cc");
-
-      // old code had static struct w/ field name in top-level... no longer the case
-      // printer->Emit({{"field_name", FieldName(field)}}, R"cc(
-      //   offsetof($classtype$DefaultTypeInternal, $field_name$_)
-    } else {
-      printer->Emit({{"field_name", FieldName(field)}}, R"cc(
-        /* was default field: $impl_prefix$ $field_name$ */
-        PROTOBUF_FIELD_OFFSET($classtype$, $impl_prefix$$field_name$_)
-      )cc");
-    }
-
-    if (field->is_repeated()) {
-      printer->Emit(R"cc(
-        ))+8) << 6) >> 6)
-      )cc");
-    } else {
-      printer->Emit(R"cc(
-        ))) << 6) >> 6)
-      )cc");
-    }
-
-    printer->Emit(R"cc(
-      ,
-    )cc");
-
-    const FieldGenerator& nfield_generator = field_generators_.get(field);
-    const FieldDescriptor* nfield_fdescript = nfield_generator.impl_->descriptor_;
-
-    std::string nmessprefixstr;
-    if (nfield_fdescript->file()->package().empty()) {
-      nmessprefixstr = "";
-    } else {
-      nmessprefixstr = absl::StrReplaceAll(nfield_fdescript->file()->package(), {{".", "__"}});
-    }
-
-    printer->Emit(R"cc(
-      /* if nested message, pointer to that type's descriptor table */
-    )cc");
-    if (nfield_fdescript->message_type() != NULL) {
-      // nested message descriptor table pointer
-      std::string clname = ClassName(nfield_fdescript->message_type(), false);
-      printer->Emit({{"prefix_str", prefixstr}, {"cl_name", clname}}, R"cc(
-        (uint64_t)($prefix_str$_FriendStruct_$cl_name$_ACCEL_DESCRIPTORS::$cl_name$_ACCEL_DESCRIPTORS),
-      )cc");
-    } else {
-      // non nested.
-      printer->Emit(R"cc(
-        0L,
-      )cc");
-    }
-  }
-
-  printer->Emit(R"cc(
-    /* is_submessage region (64 bits each): */
-  )cc");
-  long long write_so_far = 0;
-  for (int i = minfieldnum; i <= maxfieldnum; i++) {
-    int write_index = (i - minfieldnum) + 1;
-
-
-    int intra_chunk_index = write_index % 64;
-    //int chunk_id = write_index / 64;
-
-    const FieldDescriptor* field = fields[i];
-    if (field != NULL) {
-        // for this field, emit extra metadata if it's a nested message
-        const FieldGenerator& nfield_generator = field_generators_.get(field);
-        const FieldDescriptor* nfield_fdescript = nfield_generator.impl_->descriptor_;
-
-        if (nfield_fdescript->message_type() != NULL) {
-            write_so_far |= (1L << intra_chunk_index);
-        }
-    }
-
-    if ((intra_chunk_index == 63) || (i == maxfieldnum)) {
-      printer->Emit({{"wsf", write_so_far}}, R"cc(
-        $wsf$LL,
-      )cc");
-      write_so_far = 0L;
-    }
-  }
-
-
-  printer->Emit(R"cc(
-    };
-  )cc");
-
-  return std::make_pair(entries, offsets);
+  // auto v = printer->WithVars(ClassVars(descriptor_, options_));
+  // auto t = printer->WithVars(MessageVars(descriptor_));
+  //
+  // Formatter format(printer, variables_);
+  //
+  // std::string prefixstr = descriptor_->file()->package().empty() ? "" : absl::StrReplaceAll(descriptor_->file()->package(), {{".", "__"}});
+  //
+  // printer->Emit(
+  //   {
+  //     {"prefix_str", prefixstr},
+  //     {"is_m_e_addr", IsMapEntryMessage(descriptor_) ? "" : "&"},
+  //     {"is_map_entry", IsMapEntryMessage(descriptor_) ? "internal_" : ""}
+  //   }, R"cc(
+  //   alignas(16) const $uint64$ $prefix_str$_FriendStruct_$classname$_ACCEL_DESCRIPTORS::$classname$_ACCEL_DESCRIPTORS[] = {
+  //     /* HEADER: */
+  //     /* entry 0: this obj vptr */
+  //     (uint64_t)(*((uint64_t*)($is_m_e_addr$($classtype$::$is_map_entry$default_instance())))),
+  //     /* entry 1: this obj size */
+  //     (uint64_t)sizeof($classtype$),
+  //     /* entry 2: hasbits raw offset */
+  //     (uint64_t) PROTOBUF_FIELD_OFFSET($classtype$, $has_bits$), // using $$has_bits$$ instead of straight _impl_._has_bits_
+  // )cc");
+  //
+  // const int kNumGenericOffsets = 5;  // the number of fixed offsets above
+  // const size_t offsets = kNumGenericOffsets + descriptor_->field_count() +
+  //                        descriptor_->oneof_decl_count();
+  //
+  // long long maxfieldnum = 1 - 1; // start at min possible field num - 1
+  // long long minfieldnum = 536870911 + 1; // start at max possible field num + 1
+  // for (auto field : FieldRange(descriptor_)) {
+  //   if (field->number() > maxfieldnum) {
+  //     maxfieldnum = field->number();
+  //   }
+  //   if (field->number() < minfieldnum) {
+  //     minfieldnum = field->number();
+  //   }
+  // }
+  //
+  // std::vector<const FieldDescriptor*> fields(maxfieldnum+1, NULL);
+  // for (auto field : FieldRange(descriptor_)) {
+  //   fields[field->number()] = field;
+  // }
+  //
+  // printer->Emit({{"min_field_num", minfieldnum}, {"max_field_num", maxfieldnum}}, R"cc(
+  //   /* entry 3: */
+  //   /* min field num */ (((uint64_t) $min_field_num$L) << 32) |
+  //   /* max field num */ (((uint64_t) $max_field_num$L) & 0x00000000FFFFFFFFL),
+  //
+  //   /* ENTRIES (128 bits each): */
+  //   /* { is_repeated (1bit) | cpp_type (5bits) | offset (58bits) } */
+  //   /* { submessage ADT pointer (64 bits) } */
+  // )cc");
+  //
+  // size_t entries = offsets;
+  // for (int i = minfieldnum; i <= maxfieldnum; i++) {
+  //
+  //   printer->Emit({{"i", i}}, R"cc(
+  //     /* field $i$ entry */
+  //   )cc");
+  //
+  //   const FieldDescriptor* field = fields[i];
+  //   if (field == NULL) {
+  //     printer->Emit(R"cc(
+  //       /* no field here entry1 */ 0L,
+  //       /* no field here entry2 */ 0L,
+  //     )cc");
+  //     continue;
+  //   }
+  //
+  //   printer->Emit({{"is_repeated", std::to_string(field->is_repeated())}, {"type", std::to_string(field->type())}}, R"cc(
+  //     /* is_repeated */
+  //     (((uint64_t)$is_repeated$) << 63) |
+  //     /*        type */
+  //     ((((uint64_t)$type$) & 0x1F) << 58) |
+  //     /*      offset */
+  //     (((((uint64_t)(
+  //   )cc");
+  //
+  //   // NOTE(abegonzalez): weak doesn't seem to be used in OSS
+  //   const OneofDescriptor* oneof = field->containing_oneof();
+  //   if (oneof || field->options().weak()) {
+  //     printer->Emit({
+  //       {"field_name", FieldName(field)},
+  //       {"oneof_name", oneof->name()},
+  //     }, R"cc(
+  //       /* was oneof or weak: $impl_prefix$ $oneof_name$ $field_name$ */
+  //       PROTOBUF_FIELD_OFFSET($classtype$, $impl_prefix$$oneof_name$_.$field_name$_)
+  //     )cc");
+  //
+  //     // old code had static struct w/ field name in top-level... no longer the case
+  //     // printer->Emit({{"field_name", FieldName(field)}}, R"cc(
+  //     //   offsetof($classtype$DefaultTypeInternal, $field_name$_)
+  //   } else {
+  //     printer->Emit({{"field_name", FieldName(field)}}, R"cc(
+  //       /* was default field: $impl_prefix$ $field_name$ */
+  //       PROTOBUF_FIELD_OFFSET($classtype$, $impl_prefix$$field_name$_)
+  //     )cc");
+  //   }
+  //
+  //   if (field->is_repeated()) {
+  //     printer->Emit(R"cc(
+  //       ))+8) << 6) >> 6)
+  //     )cc");
+  //   } else {
+  //     printer->Emit(R"cc(
+  //       ))) << 6) >> 6)
+  //     )cc");
+  //   }
+  //
+  //   printer->Emit(R"cc(
+  //     ,
+  //   )cc");
+  //
+  //   const FieldGenerator& nfield_generator = field_generators_.get(field);
+  //   const FieldDescriptor* nfield_fdescript = nfield_generator.impl_->descriptor_;
+  //
+  //   std::string nmessprefixstr;
+  //   if (nfield_fdescript->file()->package().empty()) {
+  //     nmessprefixstr = "";
+  //   } else {
+  //     nmessprefixstr = absl::StrReplaceAll(nfield_fdescript->file()->package(), {{".", "__"}});
+  //   }
+  //
+  //   printer->Emit(R"cc(
+  //     /* if nested message, pointer to that type's descriptor table */
+  //   )cc");
+  //   if (nfield_fdescript->message_type() != NULL) {
+  //     // nested message descriptor table pointer
+  //     std::string clname = ClassName(nfield_fdescript->message_type(), false);
+  //     printer->Emit({{"prefix_str", prefixstr}, {"cl_name", clname}}, R"cc(
+  //       (uint64_t)($prefix_str$_FriendStruct_$cl_name$_ACCEL_DESCRIPTORS::$cl_name$_ACCEL_DESCRIPTORS),
+  //     )cc");
+  //   } else {
+  //     // non nested.
+  //     printer->Emit(R"cc(
+  //       0L,
+  //     )cc");
+  //   }
+  // }
+  //
+  // printer->Emit(R"cc(
+  //   /* is_submessage region (64 bits each): */
+  // )cc");
+  // long long write_so_far = 0;
+  // for (int i = minfieldnum; i <= maxfieldnum; i++) {
+  //   int write_index = (i - minfieldnum) + 1;
+  //
+  //
+  //   int intra_chunk_index = write_index % 64;
+  //   //int chunk_id = write_index / 64;
+  //
+  //   const FieldDescriptor* field = fields[i];
+  //   if (field != NULL) {
+  //       // for this field, emit extra metadata if it's a nested message
+  //       const FieldGenerator& nfield_generator = field_generators_.get(field);
+  //       const FieldDescriptor* nfield_fdescript = nfield_generator.impl_->descriptor_;
+  //
+  //       if (nfield_fdescript->message_type() != NULL) {
+  //           write_so_far |= (1L << intra_chunk_index);
+  //       }
+  //   }
+  //
+  //   if ((intra_chunk_index == 63) || (i == maxfieldnum)) {
+  //     printer->Emit({{"wsf", write_so_far}}, R"cc(
+  //       $wsf$LL,
+  //     )cc");
+  //     write_so_far = 0L;
+  //   }
+  // }
+  //
+  //
+  // printer->Emit(R"cc(
+  //   };
+  // )cc");
+  //
+  // return std::make_pair(entries, offsets);
+  return std::make_pair(0, 0);
 }
 
 void MessageGenerator::GenerateInlineMethods(io::Printer* p) {

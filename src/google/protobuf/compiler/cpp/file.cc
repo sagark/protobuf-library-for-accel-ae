@@ -227,11 +227,6 @@ void FileGenerator::GenerateSharedHeaderCode(io::Printer* p) {
           {"undefs", [&] { GenerateMacroUndefs(p); }},
           {"global_state_decls",
            [&] { GenerateGlobalStateFunctionDeclarations(p); }},
-          {"fill_gen_class_name",
-           [&] {
-             for (auto& gen : message_generators_)
-               gen->FillGenClassName(p);
-           }},
           {"any_metadata",
            [&] {
              NamespaceOpener ns(ProtobufNamespace(options_), p);
@@ -287,8 +282,6 @@ void FileGenerator::GenerateSharedHeaderCode(io::Printer* p) {
           $any_metadata$;
 
           $global_state_decls$;
-
-          $fill_gen_class_name$;
 
           $fwd_decls$
 
@@ -1080,9 +1073,6 @@ void FileGenerator::GenerateReflectionInitializationCode(io::Printer* p) {
           $file_level_service_descriptors$ = nullptr;
     )cc");
   }
-
-  for (auto& gen : message_generators_)
-    gen->GenerateOffsetsV2(p);
 
   if (!message_generators_.empty()) {
     std::vector<std::pair<size_t, size_t>> offsets;

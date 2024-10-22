@@ -2316,7 +2316,7 @@ std::pair<size_t, size_t> MessageGenerator::GenerateOffsetsV2(
 
     if ((intra_chunk_index == 63) || (i == maxfieldnum)) {
       printer->Emit({{"wsf", write_so_far}}, R"cc(
-        $wsf$LL,
+        $wsf$ULL,
       )cc");
       write_so_far = 0L;
     }

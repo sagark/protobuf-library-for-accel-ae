@@ -292,6 +292,7 @@ void UpdateHasbitSet(io::Printer* p, bool is_oneof) {
   if (!is_oneof) {
     p->Emit(R"cc(
       $set_hasbit$;
+      //$p_hasbit$;
     )cc");
     return;
   }
@@ -388,6 +389,7 @@ void SingularString::SetAllocatedImpl(io::Printer* p) const {
     p->Emit(R"cc(
       if (value != nullptr) {
         $set_hasbit$
+        //$p_hasbit$;
       } else {
         $clear_hasbit$
       }
@@ -878,6 +880,7 @@ void RepeatedString::GenerateInlineAccessorDefinitions(io::Printer* p) const {
               $WeakDescriptorSelfPin$;
               $TsanDetectConcurrentMutation$;
               $set_hasbit$;
+              //$p_hasbit$;
               std::string* _s = _internal_mutable_$name_internal$()->Add();
               $annotate_add_mutable$;
               // @@protoc_insertion_point(field_add_mutable:$pkg.Msg.field$)
@@ -935,6 +938,7 @@ void RepeatedString::GenerateInlineAccessorDefinitions(io::Printer* p) const {
               $WeakDescriptorSelfPin$;
               $TsanDetectConcurrentMutation$;
               $set_hasbit$;
+              //$p_hasbit$;
               _internal_mutable_$name_internal$()->Add()->assign(value);
               $annotate_add$;
               // @@protoc_insertion_point(field_add:$pkg.Msg.field$)
@@ -943,6 +947,7 @@ void RepeatedString::GenerateInlineAccessorDefinitions(io::Printer* p) const {
               $WeakDescriptorSelfPin$;
               $TsanDetectConcurrentMutation$;
               $set_hasbit$;
+              //$p_hasbit$;
               _internal_mutable_$name_internal$()->Add(std::move(value));
               $annotate_add$;
               // @@protoc_insertion_point(field_add:$pkg.Msg.field$)
@@ -952,6 +957,7 @@ void RepeatedString::GenerateInlineAccessorDefinitions(io::Printer* p) const {
               $DCHK$(value != nullptr);
               $TsanDetectConcurrentMutation$;
               $set_hasbit$;
+              //$p_hasbit$;
               _internal_mutable_$name_internal$()->Add()->assign(value);
               $annotate_add$;
               // @@protoc_insertion_point(field_add_char:$pkg.Msg.field$)
@@ -960,6 +966,7 @@ void RepeatedString::GenerateInlineAccessorDefinitions(io::Printer* p) const {
               $WeakDescriptorSelfPin$;
               $TsanDetectConcurrentMutation$;
               $set_hasbit$;
+              //$p_hasbit$;
               _internal_mutable_$name_internal$()->Add()->assign(
                   reinterpret_cast<const char*>(value), size);
               $annotate_add$;
@@ -969,6 +976,7 @@ void RepeatedString::GenerateInlineAccessorDefinitions(io::Printer* p) const {
               $WeakDescriptorSelfPin$;
               $TsanDetectConcurrentMutation$;
               $set_hasbit$;
+              //$p_hasbit$;
               _internal_mutable_$name_internal$()->Add()->assign(value.data(),
                                                                  value.size());
               $annotate_add$;

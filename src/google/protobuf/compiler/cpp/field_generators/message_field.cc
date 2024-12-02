@@ -190,6 +190,7 @@ void SingularMessage::GenerateInlineAccessorDefinitions(io::Printer* p) const {
              p->Emit(R"cc(
                if (value != nullptr) {
                  $set_hasbit$
+                 //$p_hasbit$;
                } else {
                  $clear_hasbit$
                }
@@ -274,6 +275,7 @@ void SingularMessage::GenerateInlineAccessorDefinitions(io::Printer* p) const {
           $WeakDescriptorSelfPin$;
           $PrepareSplitMessageForWrite$;
           $set_hasbit$;
+          //$p_hasbit$;
           $Submsg$* _msg = _internal_mutable_$name_internal$();
           $annotate_mutable$;
           // @@protoc_insertion_point(field_mutable:$pkg.Msg.field$)
@@ -299,6 +301,7 @@ void SingularMessage::GenerateInlineAccessorDefinitions(io::Printer* p) const {
               value = $pbi$::GetOwnedMessage(message_arena, value, submessage_arena);
             }
             $set_hasbit$;
+            //$p_hasbit$;
           } else {
             $clear_hasbit$;
           }

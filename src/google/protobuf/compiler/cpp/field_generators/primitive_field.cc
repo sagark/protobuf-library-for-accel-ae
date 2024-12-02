@@ -222,6 +222,7 @@ void SingularPrimitive::GenerateInlineAccessorDefinitions(
         $PrepareSplitMessageForWrite$;
         _internal_set_$name_internal$(value);
         $set_hasbit$;
+        //$p_hasbit$;
         $annotate_set$;
         // @@protoc_insertion_point(field_set:$pkg.Msg.field$)
       }
@@ -489,6 +490,7 @@ void RepeatedPrimitive::GenerateInlineAccessorDefinitions(
       $WeakDescriptorSelfPin$;
       $TsanDetectConcurrentMutation$;
       $set_hasbit$;
+      //$p_hasbit$;
       _internal_mutable_$name_internal$()->Add(value);
       $annotate_add$;
       // @@protoc_insertion_point(field_add:$pkg.Msg.field$)

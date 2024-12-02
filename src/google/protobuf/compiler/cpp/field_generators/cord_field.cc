@@ -191,6 +191,7 @@ void CordFieldGenerator::GenerateInlineAccessorDefinitions(
     inline void $classname$::_internal_set_$name_internal$(
         const ::absl::Cord& value) {
       $set_hasbit$;
+      //$p_hasbit$;
       $field$ = value;
     }
   )cc");
@@ -208,6 +209,7 @@ void CordFieldGenerator::GenerateInlineAccessorDefinitions(
       $WeakDescriptorSelfPin$;
       $PrepareSplitMessageForWrite$;
       $set_hasbit$;
+      //$p_hasbit$;
       $field$ = value;
       $annotate_set$;
       // @@protoc_insertion_point(field_set_string_piece:$full_name$)
@@ -216,6 +218,7 @@ void CordFieldGenerator::GenerateInlineAccessorDefinitions(
   printer->Emit(R"cc(
     inline ::absl::Cord* $classname$::_internal_mutable_$name_internal$() {
       $set_hasbit$;
+      //$p_hasbit$;
       return &$field$;
     }
   )cc");

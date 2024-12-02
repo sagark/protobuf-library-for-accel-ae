@@ -272,6 +272,7 @@ void HasBitVars(const FieldDescriptor* field, const Options& opts,
   if (!idx.has_value()) {
     vars.emplace_back(Sub("set_hasbit", "").WithSuffix(";"));
     vars.emplace_back(Sub("clear_hasbit", "").WithSuffix(";"));
+    vars.emplace_back(Sub("p_hasbit", "fprintf(stderr, \"N:HB\\n\");").WithSuffix(";"));
     return;
   }
 
@@ -288,10 +289,12 @@ void HasBitVars(const FieldDescriptor* field, const Options& opts,
   auto has = absl::StrFormat("%s[%d] & %s", has_bits, index, mask);
   auto set = absl::StrFormat("%s[%d] |= %s;", has_bits, index, mask);
   auto clr = absl::StrFormat("%s[%d] &= ~%s;", has_bits, index, mask);
+  auto p = absl::StrFormat("fprintf(stderr, \"%s[%d] op %s\\n\");", has_bits, index, mask);
 
   vars.emplace_back("has_hasbit", has);
   vars.emplace_back(Sub("set_hasbit", set).WithSuffix(";"));
   vars.emplace_back(Sub("clear_hasbit", clr).WithSuffix(";"));
+  vars.emplace_back(Sub("p_hasbit", p).WithSuffix(";"));
 }
 
 void InlinedStringVars(const FieldDescriptor* field, const Options& opts,

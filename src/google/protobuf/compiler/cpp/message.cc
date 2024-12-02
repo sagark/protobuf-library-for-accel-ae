@@ -557,7 +557,7 @@ MessageGenerator::MessageGenerator(
   }
 
   size_t num_fields = (max_field_num - min_field_num) + 1;
-  max_has_bit_index_ = num_fields;
+  max_has_bit_index_ = num_fields + 1; // since you don't use the 0th bit ever
 
   for (auto field : optimized_order_) {
     // create sparse encoding of fields that have has_bits

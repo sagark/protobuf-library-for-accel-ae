@@ -223,6 +223,9 @@ class PROTOBUF_EXPORT MessageLite {
 
   // AJG
   virtual const void* GetAccelDescriptor() const { return nullptr; }
+  size_t GetUniqueId() const { return unique_id; }
+  void SetUniqueId(size_t e) { unique_id = e; }
+  size_t unique_id = 0;
 
   // Returns the arena, if any, that directly owns this message and its internal
   // memory (Arena::Own is different in that the arena doesn't directly own the
